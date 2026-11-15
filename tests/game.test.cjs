@@ -49,3 +49,15 @@ run('load(4,true);p.x=131;p.y=395;setCrouchInput("KeyS",true);update(1/120)');as
 run('load(29,true);p.x=45;p.y=405;update(1/120);setCrouchInput("KeyS",true);update(1/120);fail();respawn()');assert.equal(run('keys.crouch'),false);assert.equal(run('p.h'),35);
 run('setCrouchInput("pointer-1",true);load(0,true)');assert.equal(run('keys.crouch'),false);assert.equal(run('crouchInputs.size'),0);
 console.log('PASS: crouch posture, feet anchoring, combined inputs, slow movement, actual projectile evasion, jumping, moving platforms, portals and respawn/reset.');
+// Ignore names, colors and global vertical shifts: no repeated terrain layouts.
+const layouts=run('levels.map(l=>JSON.stringify(l.platforms.map(q=>[q[0],q[1]-l.platforms[0][1],q[2]]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])))');assert.equal(new Set(layouts).size,30,'30 independently shaped courses');
+run('load(8,true);p.x=230;p.y=tiles[1].y-35;p.ground=true;p.riding=1;var liftFeet=p.y+p.h;for(let i=0;i<60;i++)update(1/120)');assert.equal(run('state'),'playing');assert(Math.abs(run('p.y+p.h-tiles[1].y'))<.001,'lift carries vertically');assert(Math.abs(run('p.y+p.h-liftFeet'))>20,'lift actually moves');
+run('load(9,true);t=3.1;advanceTiles(0)');assert.equal(run('tiles[1].active'),false,'phase cloud disappears independently of touch');run('t=4.1;advanceTiles(0)');assert.equal(run('tiles[1].active'),true,'phase cloud reappears');
+run('load(21,true);p.x=841;p.y=355;update(1/120)');assert.equal(run('state'),'playing','collection gate blocks with no stars');run('stars[0].got=stars[1].got=true;update(1/120)');assert.equal(run('state'),'playing','two stars are insufficient');run('stars[2].got=true;update(1/120)');assert.equal(run('state'),'won','three stars open the gate');
+run('load(26,true);p.x=165;p.y=405;keys.right=true;for(let i=0;i<30;i++)update(1/120)');assert.equal(run('p.x'),177,'standing blocked by low beam');
+run('setCrouchInput("KeyS",true);for(let i=0;i<60;i++)update(1/120)');assert(run('p.x')>230,'crouch enters tunnel');assert.equal(run('p.h'),18);
+run('setCrouchInput("KeyS",false);update(1/120)');assert.equal(run('p.h'),18,'cannot stand into ceiling');
+run('for(let i=0;i<130;i++)update(1/120)');assert.equal(run('p.h'),35,'stands after leaving tunnel');assert(run('p.x')>=360);
+run('load(26,true);p.x=245;p.y=422;p.h=18;p.crouched=true;setCrouchInput("KeyS",true);jump();update(1/120)');assert(run('p.y')>=419,'jump cannot pass through beam underside');
+run('load(8,true);pause();var ly=tiles[1].y;update(1)');assert.equal(run('tiles[1].y'),run('ly'),'pause freezes elevator');
+console.log('PASS: all 30 terrain layouts differ; lift carry, timed clouds, star-locked gate, crouch tunnel and solid ceilings.');
