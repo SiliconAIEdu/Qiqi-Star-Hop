@@ -13,7 +13,7 @@ run('load(4,true);p.x=430;p.y=345;keys.right=true;for(let i=0;i<90;i++)update(1/
 run('load(4,true);p.x=470;p.y=318;p.vy=300;update(1/120)');assert.equal(run('state'),'dead','spike tip kills on downward crossing');
 run('load(6,true);var h=hammerPositions()[0];p.x=h.x-14;p.y=h.y-18;update(1/120)');assert.equal(run('state'),'dead','hammer collision');
 run('load(1,true);pause();var frozen=t;update(1)');assert.equal(run('t'),run('frozen'));
-for(let i=0;i<8;i++){run(`load(${i},true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;update(1/120)`);assert.equal(run('state'),'won');}
+for(let i=0;i<8;i++){run(`load(${i},true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;stars.forEach(s=>s.got=true);update(1/120)`);assert.equal(run('state'),'won');}
 assert.equal(run('saved.completed.filter(Boolean).length'),8);
 const migrated=setup(JSON.stringify({unlocked:6,best:[3,2,1,3,2],completed:[true,true,true,true,true]}));assert.equal(migrated('saved.unlocked'),6);assert.equal(migrated('saved.best[0]'),3);
 // Every checkpoint and portal exit must be above a stable landing surface.
@@ -21,19 +21,19 @@ assert(run('levels.every(l=>[l.checkpoint,...(l.portals||[]).map(q=>q.slice(2))]
 assert.equal(run('levels.length'),30);
 console.log('PASS: springs, moving-platform carry, crumble/restore, portals, conveyors, checkpoint respawn, spike rules, hammers, pause, all exits, save migration and safe respawn locations.');
 // Seeded input-only simulations find a full playable route from the real spawn.
-const routes=run(`(()=>{let seed=9821;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);let results=[];for(let level=0;level<levels.length-1;level++){let success=false;for(let attempt=0;attempt<450&&!success;attempt++){load(level,true);keys.right=true;for(let frame=0;frame<2400&&state==='playing';frame++){if(frame%12===0){keys.right=random()>.13;keys.left=!keys.right&&random()<.3;if(random()<(p.ground?.60:.22))jump();}update(1/120);}if(state==='won'){success=true;results.push({level:level+1,attempts:attempt+1,seconds:Math.round(t)});}}if(!success)results.push({level:level+1,failed:true});}return results;})()`);
+const routes=run(`(()=>{let seed=9821;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);let results=[];for(let level=0;level<levels.length-1;level++){let success=false;for(let attempt=0;attempt<450&&!success;attempt++){load(level,true);keys.right=true;for(let frame=0;frame<2400&&state==='playing';frame++){if(frame%12===0){const returnToExit=starCount()>=levels[index].requiredStars&&(!levels[index].key||collectedKey)&&p.x+14>levels[index].goal[0]+10;keys.right=!returnToExit&&random()>.13;keys.left=returnToExit||(!keys.right&&random()<.3);const beam=(levels[index].beams||[]).some(([x,y,w,h])=>p.x+p.w>x-40&&p.x<x+w+5&&p.y+p.h>y+h-10);setCrouchInput('route-bot',beam);if(!beam&&random()<(p.ground?.60:.22))jump();}update(1/120);}if(state==='won'){success=true;results.push({level:level+1,attempts:attempt+1,seconds:Math.round(t)});}}if(!success)results.push({level:level+1,failed:true});}return results;})()`);
 console.log(JSON.stringify(routes));assert(routes.every(r=>!r.failed),'all 29 obstacle levels have a successful input-only route');
 
 run('load(29,true);p.x=846;p.y=405;update(1/120)');assert.equal(run('state'),'playing','boss blocks exit');
 run('load(29,true);p.x=45;p.y=405;update(1/120)');assert.equal(run('checkpoint'),true);
 run('stars[0].got=true;boss.hp=3;fail();respawn()');assert.equal(run('boss.hp'),3,'checkpoint keeps boss damage');assert.equal(run('boss.shots.length'),0);
 for(let hit=0;hit<3;hit++){run('boss.cooldown=0;p.x=680+Math.sin((t+1/120)*.8)*70-14;p.y=333;p.vy=300;p.riding=null;p.ground=false;update(1/120)');assert.equal(run('boss.hp'),2-hit);assert.equal(run('state'),'playing');}
-run('p.x=846;p.y=405;p.vy=0;update(1/120)');assert.equal(run('state'),'won','defeated boss opens exit');assert.equal(run('saved.unlocked'),30);
+run('p.x=846;p.y=405;p.vy=0;stars.forEach(s=>s.got=true);update(1/120)');assert.equal(run('state'),'won','defeated boss opens exit');assert.equal(run('saved.unlocked'),30);
 run('load(29,true);boss.clock=2.79;p.x=40;p.y=405;update(1/120);update(1/120)');assert.equal(run('boss.shots.length'),1,'phase one projectile');
 run('boss.hp=2;boss.clock=1.895;boss.shots=[];update(1/120)');assert.equal(run('boss.shots.length'),2,'phase two double shot');
 run('load(29,true);p.x=665;p.y=390;update(1/120)');assert.equal(run('state'),'dead','boss body dangerous');
 run('load(29,true);boss.shots=[{x:59,y:408,vx:0,vy:0}];p.x=45;p.y=390;update(1/120)');assert.equal(run('state'),'dead','projectile collision');
-run('load(15,true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;update(1/120)');assert.equal(run('state'),'playing','key locks exit');run('collectedKey=true;update(1/120)');assert.equal(run('state'),'won');
+run('load(15,true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;update(1/120)');assert.equal(run('state'),'playing','key locks exit');run('collectedKey=true;stars.forEach(s=>s.got=true);update(1/120)');assert.equal(run('state'),'won');
 console.log('PASS: 30 levels, locked boss exit, five-hit boss health model, phases, damage persistence, body/projectile danger and key gates.');
 const battle=run(`(()=>{load(29,true);let retries=0,seed=738;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);for(let frame=0;frame<36000;frame++){if(state==='dead'){respawn();retries++;}if(state==='won')return {won:true,retries,seconds:Math.round(t)};let target=boss.hp>0?boss.x+Math.cos(t*.8)*20:860;keys.right=p.x+14<target-5;keys.left=p.x+14>target+5;setCrouchInput('bot',boss.plan?.type==='sweep'&&p.ground&&p.y+p.h>425);if(frame%10===0&&p.ground&&!keys.crouch&&random()>.25)jump();update(1/120);}return {won:false,hp:boss.hp,x:p.x,y:p.y,state,retries};})()`);console.log('Input-only boss battle:',JSON.stringify(battle));assert(battle.won,'Boss can be defeated using ordinary controls');
 // Crouch keeps feet planted and changes actual collision bounds, not only the sprite.
@@ -67,7 +67,7 @@ smart('load(3,true);failures[3]=0;fail();load(3,true);fail();load(3,true)');asse
 smart('tiles[1].trigger=1.05;advanceTiles(0)');assert.equal(smart('tiles[1].active'),true,'assisted crumble lasts longer');smart('toggleSmart();advanceTiles(0)');assert.equal(smart('tiles[1].active'),false,'toggle restores normal rules');smart('load(1,true)');assert.equal(smart('assisted()'),false,'failures belong to a level');
 smart('smartEnabled=true;load(0,true);p.x=45;p.y=394;p.vy=200;p.jumps=2;jump();update(1/120)');assert(smart('p.vy')<0,'queued jump triggers after landing');
 smart('load(26,true);p.x=170;p.y=405');assert(smart('coachAdvice().text').includes('蹲下'));
-smart('load(15,true);p.x=830;p.y=230');assert(smart('coachAdvice().text').includes('钥匙'));smart('collectedKey=true');assert(smart('coachAdvice().text').includes('已开放'));
+smart('load(15,true);p.x=450;p.y=410;goalRevealed=true');assert(smart('coachAdvice().text').includes('钥匙'));smart('collectedKey=true;goalRevealed=true;stars.forEach(s=>s.got=true)');assert(smart('coachAdvice().text').includes('已开放'));
 smart('load(21,true);p.x=830;p.y=355;stars[0].got=true');assert(smart('coachAdvice().text').includes('2 颗'));
 smart('load(9,true);p.x=145;p.y=345;t=3.1;advanceTiles(0)');assert(smart('coachAdvice().text').includes('还没出现'));
 smart('load(4,true);p.x=442;p.y=345;keys.right=true;for(let i=0;i<380;i++)update(1/120)');assert(smart('coach.markUntil')>smart('t'),'blocked movement triggers advice');assert(smart('notice').includes('尖刺'));
@@ -81,3 +81,21 @@ smart('var oldVX;boss.clock=bossInterval();updateBoss(0,p.y+p.h);oldVX=boss.shot
 smart('failures[29]=3');assert(smart('bossWarning()')>=1);assert(smart('bossInterval()')>3);smart('load(29,true)');assert.equal(smart('checkpoint'),true,'boss checkpoint is active on entry');
 const preference=setup(JSON.stringify({enabled:false}));assert.equal(preference('smartEnabled'),false,'disabled preference survives reload');
 console.log('PASS: contextual coaching, stuck detection, failure feedback, optional per-level assistance, jump buffering, boss attack selection and fair committed telegraphs.');
+const gates=setup();gates('smartEnabled=false');
+for(let i=0;i<30;i++){
+ gates(`load(${i},true);collectedKey=true;if(boss)boss.hp=0;p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-p.h;updateDoors()`);
+ assert.equal(gates('state'),'playing',`level ${i+1}: empty stars cannot pass`);
+ gates('stars.forEach((s,i)=>s.got=i<levels[index].requiredStars-1);updateDoors()');assert.equal(gates('state'),'playing','one short stays locked');
+ gates('stars.forEach((s,i)=>s.got=i<levels[index].requiredStars);updateDoors()');assert.equal(gates('state'),'won','exact quota opens real door');
+}
+for(let i=0;i<30;i++){
+ gates(`load(${i},true);stars.forEach(s=>s.got=true);collectedKey=true`);
+ if(gates('fakeDoors.length')){gates('p.x=fakeDoors[0].x-14;p.y=fakeDoors[0].y-p.h;updateDoors()');assert.equal(gates('state'),'playing','fake never completes level');assert.equal(gates('fakeDoors[0].exposed'),true);assert.equal(gates('starCount()'),3,'fake never removes stars');}
+}
+gates('load(6,true);stars.forEach(s=>s.got=true);p.x=levels[index].goal[0]-114;p.y=levels[index].goal[1]-35');assert.equal(gates('goalRevealed'),false);assert.equal(gates('coachAdvice().target'),null,'hint does not reveal hidden coordinates');gates('updateDoors()');assert.equal(gates('goalRevealed'),false,'100 px away stays hidden');gates('p.x+=12;updateDoors()');assert.equal(gates('goalRevealed'),true,'approaching reveals hidden door');assert.equal(gates('state'),'playing','discovery alone does not pass');
+gates('checkpoint=true;fakeDoors[0].exposed=true;fail();respawn()');assert.equal(gates('goalRevealed'),true,'checkpoint keeps discovered door');assert.equal(gates('fakeDoors[0].exposed'),true);assert.equal(gates('starCount()'),3);
+gates('load(29,true);p.x=846;p.y=405;stars.forEach(s=>s.got=true);updateDoors()');assert.equal(gates('state'),'playing','boss still blocks with sufficient stars');gates('boss.hp=0;updateDoors()');assert.equal(gates('state'),'won');
+gates('load(15,true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;stars.forEach(s=>s.got=true);updateDoors()');assert.equal(gates('state'),'playing','key still blocks with sufficient stars');gates('collectedKey=true;updateDoors()');assert.equal(gates('state'),'won');
+assert(gates('levels.every(l=>l.requiredStars>=1&&l.requiredStars<=l.stars.length)'));
+assert(gates('levels.every(l=>[l.goal,...(l.fakeGoals||[])].every(([x,y])=>l.platforms.some(q=>q[1]===y&&!q[3]&&x-22>=q[0]&&x+22<=q[0]+q[2])))'),'all exits stand on stable platforms');
+console.log('PASS: all 30 star quotas, fake-door discovery without losses, hidden-door proximity, checkpoint retention and combined key/Boss exit requirements.');
