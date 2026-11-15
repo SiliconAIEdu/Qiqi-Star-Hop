@@ -2,3 +2,5 @@
 require('./routes.test.cjs');
 require('./duo.test.cjs');
 require('./rescue.test.cjs');
+
+require('./ghost.test.cjs');
