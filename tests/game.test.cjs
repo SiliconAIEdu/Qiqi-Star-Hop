@@ -5,3 +5,4 @@ require('./rescue.test.cjs');
 
 require('./ghost.test.cjs');
 require('./characters.test.cjs');
+require('./items.test.cjs');
