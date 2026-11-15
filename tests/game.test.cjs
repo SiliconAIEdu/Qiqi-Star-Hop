@@ -2,6 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(require('path').join(__dirname,'../dist/game.js'),'utf8');
 function setup(save=null){const elements=new Map();function el(){return {textContent:'',innerHTML:'',hidden:false,appendChild(){},focus(){},blur(){},addEventListener(){},setAttribute(){},getContext(){return {}},dataset:{}}}const document={getElementById(id){if(!elements.has(id))elements.set(id,el());return elements.get(id)},createElement:el,querySelectorAll(){return []},addEventListener(){}};const context={document,window:{addEventListener(){}},localStorage:{getItem(){return save},setItem(){}},requestAnimationFrame(){},console};vm.createContext(context);new vm.Script(source).runInContext(context);return s=>vm.runInContext(s,context)}
 const run=setup();
+run("smartEnabled=false");
 run('load(0,true);p.x=140;p.y=395;update(1/120)');assert(run('p.vy')<-600,'spring launches');assert.equal(run('p.ground'),false);
 run('load(1,true);p.x=245;p.y=350;update(1/120);var offset=p.x-tiles[1].x;for(let i=0;i<60;i++)update(1/120)');assert(Math.abs(run('p.x-tiles[1].x-offset'))<.001,'moving platform carries player');
 run('load(3,true);p.x=235;p.y=350;update(1/120);for(let i=0;i<115;i++)update(1/120)');assert.equal(run('tiles[1].active'),false,'crumble disappears');run('advanceTiles(3)');assert.equal(run('tiles[1].active'),true,'crumble returns');
@@ -34,7 +35,7 @@ run('load(29,true);p.x=665;p.y=390;update(1/120)');assert.equal(run('state'),'de
 run('load(29,true);boss.shots=[{x:59,y:408,vx:0,vy:0}];p.x=45;p.y=390;update(1/120)');assert.equal(run('state'),'dead','projectile collision');
 run('load(15,true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;update(1/120)');assert.equal(run('state'),'playing','key locks exit');run('collectedKey=true;update(1/120)');assert.equal(run('state'),'won');
 console.log('PASS: 30 levels, locked boss exit, five-hit boss health model, phases, damage persistence, body/projectile danger and key gates.');
-const battle=run(`(()=>{load(29,true);let retries=0;for(let frame=0;frame<18000;frame++){if(state==='dead'){respawn();retries++;}if(state==='won')return {won:true,retries,seconds:Math.round(t)};let target=boss.hp>0?boss.x:860;keys.right=p.x+14<target-5;keys.left=p.x+14>target+5;if(frame%10===0&&p.ground)jump();update(1/120);}return {won:false,hp:boss.hp,x:p.x,y:p.y,state,retries};})()`);console.log('Input-only boss battle:',JSON.stringify(battle));assert(battle.won,'Boss can be defeated using ordinary controls');
+const battle=run(`(()=>{load(29,true);let retries=0,seed=738;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);for(let frame=0;frame<36000;frame++){if(state==='dead'){respawn();retries++;}if(state==='won')return {won:true,retries,seconds:Math.round(t)};let target=boss.hp>0?boss.x+Math.cos(t*.8)*20:860;keys.right=p.x+14<target-5;keys.left=p.x+14>target+5;setCrouchInput('bot',boss.plan?.type==='sweep'&&p.ground&&p.y+p.h>425);if(frame%10===0&&p.ground&&!keys.crouch&&random()>.25)jump();update(1/120);}return {won:false,hp:boss.hp,x:p.x,y:p.y,state,retries};})()`);console.log('Input-only boss battle:',JSON.stringify(battle));assert(battle.won,'Boss can be defeated using ordinary controls');
 // Crouch keeps feet planted and changes actual collision bounds, not only the sprite.
 run('load(29,true);p.x=45;p.y=405;update(1/120);var feet=p.y+p.h;setCrouchInput("ArrowDown",true);update(1/120)');assert.equal(run('p.h'),18);assert.equal(run('p.y+p.h'),run('feet'));assert.equal(run('p.crouched'),true);
 run('setCrouchInput("KeyS",true);setCrouchInput("ArrowDown",false);update(1/120)');assert.equal(run('p.h'),18,'other crouch input still held');
@@ -61,3 +62,22 @@ run('for(let i=0;i<130;i++)update(1/120)');assert.equal(run('p.h'),35,'stands af
 run('load(26,true);p.x=245;p.y=422;p.h=18;p.crouched=true;setCrouchInput("KeyS",true);jump();update(1/120)');assert(run('p.y')>=419,'jump cannot pass through beam underside');
 run('load(8,true);pause();var ly=tiles[1].y;update(1)');assert.equal(run('tiles[1].y'),run('ly'),'pause freezes elevator');
 console.log('PASS: all 30 terrain layouts differ; lift carry, timed clouds, star-locked gate, crouch tunnel and solid ceilings.');
+const smart=setup();
+smart('load(3,true);failures[3]=0;fail();load(3,true);fail();load(3,true)');assert.equal(smart('assisted()'),false);smart('fail();load(3,true)');assert.equal(smart('assisted()'),true,'three failures activate support');assert(smart('crumbleWindow()')>1.3);
+smart('tiles[1].trigger=1.05;advanceTiles(0)');assert.equal(smart('tiles[1].active'),true,'assisted crumble lasts longer');smart('toggleSmart();advanceTiles(0)');assert.equal(smart('tiles[1].active'),false,'toggle restores normal rules');smart('load(1,true)');assert.equal(smart('assisted()'),false,'failures belong to a level');
+smart('smartEnabled=true;load(0,true);p.x=45;p.y=394;p.vy=200;p.jumps=2;jump();update(1/120)');assert(smart('p.vy')<0,'queued jump triggers after landing');
+smart('load(26,true);p.x=170;p.y=405');assert(smart('coachAdvice().text').includes('蹲下'));
+smart('load(15,true);p.x=830;p.y=230');assert(smart('coachAdvice().text').includes('钥匙'));smart('collectedKey=true');assert(smart('coachAdvice().text').includes('已开放'));
+smart('load(21,true);p.x=830;p.y=355;stars[0].got=true');assert(smart('coachAdvice().text').includes('2 颗'));
+smart('load(9,true);p.x=145;p.y=345;t=3.1;advanceTiles(0)');assert(smart('coachAdvice().text').includes('还没出现'));
+smart('load(4,true);p.x=442;p.y=345;keys.right=true;for(let i=0;i<380;i++)update(1/120)');assert(smart('coach.markUntil')>smart('t'),'blocked movement triggers advice');assert(smart('notice').includes('尖刺'));
+smart('load(0,true);requestHint()');assert(smart('coach.target')!==null,'manual hint highlights a target');
+smart('load(4,true);fail("spike")');assert(smart("$('modalText').textContent").includes('尖端'));
+smart('load(29,true);p.ground=true;p.crouched=false');assert.equal(smart('planBossAttack().type'),'sweep');
+smart('p.crouched=true');assert.equal(smart('planBossAttack().type'),'low');
+smart('p.crouched=false;p.ground=false;p.x=500;p.y=270;p.vx=235');assert.equal(smart('planBossAttack().type'),'aim');
+smart('boss.clock=bossInterval()-bossWarning();updateBoss(0,p.y+p.h);var committed=JSON.stringify(boss.plan);p.x=50;p.y=400;p.crouched=true;updateBoss(.1,p.y+p.h)');assert.equal(smart('JSON.stringify(boss.plan)'),smart('committed'),'warning target stays locked when player moves');
+smart('var oldVX;boss.clock=bossInterval();updateBoss(0,p.y+p.h);oldVX=boss.shots[0].vx;p.x=850;updateBoss(.1,p.y+p.h)');assert.equal(smart('boss.shots[0].vx'),smart('oldVX'),'projectiles do not home after firing');
+smart('failures[29]=3');assert(smart('bossWarning()')>=1);assert(smart('bossInterval()')>3);smart('load(29,true)');assert.equal(smart('checkpoint'),true,'boss checkpoint is active on entry');
+const preference=setup(JSON.stringify({enabled:false}));assert.equal(preference('smartEnabled'),false,'disabled preference survives reload');
+console.log('PASS: contextual coaching, stuck detection, failure feedback, optional per-level assistance, jump buffering, boss attack selection and fair committed telegraphs.');
