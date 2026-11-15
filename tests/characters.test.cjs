@@ -1,0 +1,16 @@
+const {setup}=require('./expedition.test.cjs'),assert=require('node:assert/strict');
+const run=setup(null,true);
+run('load(26,true);for(let i=0;i<40;i++)update(1/120);var before=[p.x,p.y,p.w,p.h,p2.x,t,doorCursor,starCount()];chooseOutfit(0,"character","pig");chooseOutfit(1,"character","fish");chooseOutfit(0,"pet","fish");chooseOutfit(1,"pet","slime")');
+assert.equal(run('JSON.stringify(before)'),run('JSON.stringify([p.x,p.y,p.w,p.h,p2.x,t,doorCursor,starCount()])'),'outfits preserve gameplay and collision body');assert.equal(run('outfits[0].character'),'pig');assert.equal(run('outfits[1].character'),'fish');
+run('outfits=readOutfits()');assert.equal(run('outfits[0].character'),'pig');assert.equal(run('outfits[1].pet'),'slime');
+run('chooseOutfit(0,"character","invalid");chooseOutfit(3,"pet","fish");chooseOutfit(1,"invalid","pig")');assert.equal(run('outfits[0].character'),'pig');
+for(const id of ['poop','pig','cat','rabbit','fish','dino'])run(`chooseOutfit(0,'character','${id}');chooseOutfit(1,'character','${id}');draw(0);p.crouched=true;draw(0);p.crouched=false`);
+run('keys.right=true;var petX=followers[0].x,otherPetX=followers[1].x;for(let i=0;i<60;i++)update(1/120)');assert(run('followers[0].x>petX+10'));assert(run('Math.abs(followers[1].x-otherPetX)<5'),'P2 pet stays with P2');
+run('keys.right=false;p.x=100;jump();var petY=followers[0].y;for(let i=0;i<35;i++)update(1/120)');assert(run('followers[0].y<petY-10'),'pet follows the jump');
+run('pause();var paused=JSON.stringify(followers);update(1)');assert.equal(run('JSON.stringify(followers)'),run('paused'));
+run('state="playing";p.x=2000;updateFollowers(.01)');assert(run('Math.abs(followers[0].x-p.x)<40'),'pet follows portal without crossing whole map');
+run('saveCheckpoint(410,440);respawn()');assert(run('Math.abs(followers[0].x-p.x)<40'));assert.equal(run('outfits[1].character'),'dino');
+run('chooseMode(false);update(.01);draw(0)');assert.equal(run('followers[1]'),null);assert.equal(run("$('wardrobe-two').hidden"),true);run('chooseMode(true)');assert(run('followers[1]!==null'));assert.equal(run('outfits[1].character'),'dino');
+run('fail();update(.1);draw(0)');assert.equal(run('p.life'),'down');run('t=p.downUntil;updateRescue(0);draw(0)');assert.equal(run('p.life'),'out');
+const corrupted=setup(null,true,'[{"character":"bogus","pet":"bogus"},null]');assert.equal(corrupted('outfits[0].character'),'poop');assert.equal(corrupted('outfits[1].pet'),'chick');
+console.log('PASS: independent outfits/pets, persistence, invalid saves, preserved gameplay, all costume rendering, pet running/jumping/pause/portal/respawn, modes and ghost lifecycle.');

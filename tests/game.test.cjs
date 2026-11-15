@@ -4,3 +4,4 @@ require('./duo.test.cjs');
 require('./rescue.test.cjs');
 
 require('./ghost.test.cjs');
+require('./characters.test.cjs');
