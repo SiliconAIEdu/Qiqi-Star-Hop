@@ -35,3 +35,17 @@ run('load(29,true);boss.shots=[{x:59,y:408,vx:0,vy:0}];p.x=45;p.y=390;update(1/1
 run('load(15,true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;update(1/120)');assert.equal(run('state'),'playing','key locks exit');run('collectedKey=true;update(1/120)');assert.equal(run('state'),'won');
 console.log('PASS: 30 levels, locked boss exit, five-hit boss health model, phases, damage persistence, body/projectile danger and key gates.');
 const battle=run(`(()=>{load(29,true);let retries=0;for(let frame=0;frame<18000;frame++){if(state==='dead'){respawn();retries++;}if(state==='won')return {won:true,retries,seconds:Math.round(t)};let target=boss.hp>0?boss.x:860;keys.right=p.x+14<target-5;keys.left=p.x+14>target+5;if(frame%10===0&&p.ground)jump();update(1/120);}return {won:false,hp:boss.hp,x:p.x,y:p.y,state,retries};})()`);console.log('Input-only boss battle:',JSON.stringify(battle));assert(battle.won,'Boss can be defeated using ordinary controls');
+// Crouch keeps feet planted and changes actual collision bounds, not only the sprite.
+run('load(29,true);p.x=45;p.y=405;update(1/120);var feet=p.y+p.h;setCrouchInput("ArrowDown",true);update(1/120)');assert.equal(run('p.h'),18);assert.equal(run('p.y+p.h'),run('feet'));assert.equal(run('p.crouched'),true);
+run('setCrouchInput("KeyS",true);setCrouchInput("ArrowDown",false);update(1/120)');assert.equal(run('p.h'),18,'other crouch input still held');
+run('setCrouchInput("KeyS",false);update(1/120)');assert.equal(run('p.h'),35);assert.equal(run('p.y+p.h'),run('feet'));
+run('setCrouchInput("pointer-12",true);keys.right=true;update(1/120)');assert.equal(run('p.vx'),125,'crouch walk');assert.equal(run('p.h'),18);run('setCrouchInput("pointer-12",false);update(1/120)');assert.equal(run('p.h'),35);
+run('load(29,true);p.x=45;p.y=405;setCrouchInput("KeyS",true);boss.shots=[{x:59,y:410,vx:0,vy:0}];update(1/120)');assert.equal(run('state'),'playing','duck beneath overhead projectile');
+run('setCrouchInput("KeyS",false);update(1/120)');assert.equal(run('state'),'dead','standing into same projectile hits');
+run('load(29,true);p.x=45;p.y=405;setCrouchInput("KeyS",true);boss.shots=[{x:59,y:432,vx:0,vy:0}];update(1/120)');assert.equal(run('state'),'dead','low projectile still hits crouching player');
+run('load(0,true);p.x=45;p.y=395;setCrouchInput("ArrowDown",true);update(1/120);jump();update(1/120)');assert(run('p.vy')<0,'jump works while crouched');assert.equal(run('p.h'),18);
+run('load(1,true);p.x=245;p.y=350;setCrouchInput("KeyS",true);update(1/120);var crouchOffset=p.x-tiles[1].x;for(let i=0;i<60;i++)update(1/120)');assert(Math.abs(run('p.x-tiles[1].x-crouchOffset'))<.001,'crouch rides moving platform');
+run('load(4,true);p.x=131;p.y=395;setCrouchInput("KeyS",true);update(1/120)');assert.equal(run('p.y+p.h'),235,'crouch portal preserves landing height');
+run('load(29,true);p.x=45;p.y=405;update(1/120);setCrouchInput("KeyS",true);update(1/120);fail();respawn()');assert.equal(run('keys.crouch'),false);assert.equal(run('p.h'),35);
+run('setCrouchInput("pointer-1",true);load(0,true)');assert.equal(run('keys.crouch'),false);assert.equal(run('crouchInputs.size'),0);
+console.log('PASS: crouch posture, feet anchoring, combined inputs, slow movement, actual projectile evasion, jumping, moving platforms, portals and respawn/reset.');
