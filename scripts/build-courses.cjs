@@ -34,7 +34,7 @@ const recipes=[
  ['王城外环',2,'hammer','tunnel','belt','lift'],['星河终极魔王',8,'spike','rhythm','hammer','bounce']
 ];
 function section(L,x,entryY,profileId,kind,n,opening=false){
- const ys=profiles[profileId%profiles.length];const step=142+(n%4)*7, width=106-Math.floor(n/20)*8;
+ const ys=profiles[profileId%profiles.length];const step=150+(n%4)*7, width=102-Math.floor(n/20)*8;
  // The first step stays within a single jump of the preceding rest platform.
  const actual=[entryY];for(let k=1;k<=6;k++)actual[k]=Math.max(actual[k-1]-65,Math.min(actual[k-1]+65,ys[k]));
  if(opening)L.platforms.push([0,entryY,160]);
@@ -44,7 +44,7 @@ function section(L,x,entryY,profileId,kind,n,opening=false){
    if(mechanic==='move')tile.push('move',24+n%9,.8+(n%4)*.12);
    if(mechanic==='lift')tile.push('lift',30,.9+(n%3)*.12);
    if(mechanic==='crumble')tile.push('crumble');
-   if(mechanic==='phase')tile.push('phase',k*.7,4.3);
+   if(mechanic==='phase')tile.push('phase',k*.7,3.7);
    if(mechanic==='belt')tile.push('belt',k===3?100:-95);
   }
   L.platforms.push(tile);
@@ -66,14 +66,14 @@ for(let n=0;n<100;n++){
  let L,gate;
  if(n<30){L=structuredClone(originals[n]);gate=L.goal.slice();}
  else{const r=recipes[n-30];L={name:r[0],sub:themes[r[2]][0]+' · '+themes[r[3]][0],color:originals[(n-30)%30].color,platforms:[],stars:[],spikes:[],hammers:[],beams:[],hint:'观察落点，连续跳跃。更远的路段藏着编号门。',route:'',checkpoint:[45,profiles[r[1]][0]]};}
- L.hammers??=[];L.beams??=[];L.checkpoints=[L.checkpoint];L.doors=[];L.crumbleDelay=n<30?.7:.55;
+ L.hammers??=[];L.beams??=[];L.checkpoints=[L.checkpoint];L.doors=[];L.crumbleDelay=n<30?.6:.5;
  if(n>=30){const r=recipes[n-30];gate=section(L,0,profiles[r[1]][0],r[1],r[2],n,true);if(n%4===0){L.key=[gate[0]-40,gate[1]-32];}}
  // Preserve the original opening and make all later sections traversable both ways.
  L.doors.push({x:gate[0],y:gate[1],real:n%2===0,hidden:false,clue:'沿着第一段路线向前探索。'});
  L.checkpoints.push([gate[0]-25,gate[1]]);
- const count=n<30?2:3;
+ const count=n<30?3:4;
  for(let s=0;s<count;s++){
-  const kind=n<30?Object.keys(themes)[(n*3+s*4)%10]:recipes[n-30][s+3];
+  const kind=n<30?Object.keys(themes)[(n*3+s*4)%10]:(recipes[n-30][s+3]||Object.keys(themes)[(n*3+s*4)%10]);
   const start=gate[0]+65;
   // Safe connecting ledge between the previous door and the next stretch.
   L.platforms.push([gate[0]+22,gate[1],65]);
@@ -84,7 +84,7 @@ for(let n=0;n<100;n++){
   L.doors.push({x:doorX,y:doorY,real:s===0?n%2!==0:n%3===0,hidden,clue:hidden?'休息台上方也许有微光，跳上小平台找找。':'沿'+themes[kind][0]+'前进。'});
  }
  if(n===29||n===59||n===99){
-  L.boss=true;L.bossHP=n===99?10:n===59?8:5;const arena=gate[0]+180;
+  L.boss=true;L.bossHP=n===99?12:n===59?8:5;const arena=gate[0]+180;
   L.platforms.push([gate[0]+22,gate[1],100],[arena-20,Math.min(440,gate[1]+60),135],[arena+110,440,900],[arena+250,350,110],[arena+445,290,100],[arena+650,325,110]);
   for(let k=1;k<=3;k++){const sy=Math.min(440,gate[1]+k*65);L.platforms.push([arena-20+k*80,sy,90]);}
   L.checkpoints.push([arena+150,440]);L.bossX=arena+700;
@@ -92,9 +92,9 @@ for(let n=0;n<100;n++){
   L.hint='先完成编号门的验真，再到竞技场踩中 Boss 金色头顶 '+L.bossHP+' 次。';
  }else{L.boss=false;L.platforms.push([gate[0]+135,gate[1],160]);L.goal=[gate[0]+215,gate[1]];}
  L.hiddenGoal=n%5===3;L.doors.push({x:L.goal[0],y:L.goal[1],real:true,hidden:L.hiddenGoal,exit:true,clue:'最后一段路的安静角落里有微光。'});
- L.worldWidth=L.goal[0]+90;L.requiredStars=n<10?5:n<30?6:n<50?9:n<80?10:11;
+ L.worldWidth=L.goal[0]+90;L.requiredStars=n<10?7:n<30?8:n<50?11:n<80?12:13;
  if(n<29){L.hint=L.hint.replaceAll('终点','1 号门');L.route=L.route.replaceAll('终点','1 号门');}
- if(n===21){L.hint='这次需要 6 颗星。探索后面的路段，收够星星再开最后的门。';L.route='收集六颗星 → 依次验门';}
+ if(n===21){L.hint='这次需要 8 颗星。探索后面的路段，收够星星再开最后的门。';L.route='收集八颗星 → 依次验门';}
  L.route=(n<30?L.route+' → ':'')+L.doors.length+' 道编号门 · 自动跟随镜头';
  L.sub+=(n===29?' · 中途 Boss':n===99?' · 最终 Boss':n===59?' · 星空 Boss':'');
  levels.push(L);
