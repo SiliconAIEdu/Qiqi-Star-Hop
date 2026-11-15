@@ -1,2 +1,4 @@
-// Full regression suite, including input-only completion of all 60 courses.
+// Full regression suite: course routes, cooperative controls, and rescue lifecycle.
 require('./routes.test.cjs');
+require('./duo.test.cjs');
+require('./rescue.test.cjs');
