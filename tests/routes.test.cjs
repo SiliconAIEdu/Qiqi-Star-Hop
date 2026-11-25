@@ -4,6 +4,11 @@ let results=[];
 for(let level=0;level<100;level++){
  const result=run(`(()=>{load(${level},true);let seed=9821+index*177,retries=0,stuck=0,prev=0,targetFrames=0,priorTarget=null;const skipped=new Set();const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);for(let frame=0;frame<160000;frame++){
  if(state==='dead'){respawn();retries++;}if(state==='won')return {level:index+1,won:true,retries,seconds:Math.round(t)};
+ if(monster.hp&&monster.chasing){
+  p.facing=monster.x>=p.x+14?1:-1;attackMonster();
+  keys.right=!p.armed&&p.x<65;keys.left=!p.armed&&p.x>65;
+  update(1/120);continue;
+ }
  const L=levels[index],d=doors[doorCursor];let target={x:d.x,y:d.y-25};
  const missing=starCount()<L.requiredStars;
  if(missing){const options=stars.filter(s=>!s.got&&!skipped.has(s)&&s.x<d.x+70).sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x));if(options.length)target=options[0];}

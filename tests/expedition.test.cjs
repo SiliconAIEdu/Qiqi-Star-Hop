@@ -21,7 +21,7 @@ run('load(8,true);p.x=230;p.y=tiles[1].y-35;p.ground=true;p.riding=1;var liftFee
 run('load(9,true);t=3.1;advanceTiles(0)');assert.equal(run('tiles[1].active'),false);
 // Ordered doors cannot be skipped even with all stars. Hidden discovery is proximity based.
 for(let i=0;i<100;i++){
- run(`load(${i},true);collectedKey=true;if(boss)boss.hp=0;stars.forEach(s=>s.got=true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;updateDoors()`);
+ run(`load(${i},true);collectedKey=true;if(boss)boss.hp=0;monster.hp=0;stars.forEach(s=>s.got=true);p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;updateDoors()`);
  assert.equal(run('state'),'playing');assert.equal(run('doorCursor'),0);
  run(`for(let n=0;n<doors.length-1;n++){const d=doors[n];p.x=d.x-14;p.y=d.y-35;updateDoors();}`);
  assert.equal(run('doorCursor'),run('doors.length-1'));

@@ -1,47 +1,48 @@
 'use strict';
 const characterRoster=[
- {id:'poop',name:'绿帽便便',tag:'经典噗噗选手'},
- {id:'pig',name:'噗噗小猪',tag:'鼻孔负责卖萌'},
- {id:'cat',name:'歪嘴猫咪',tag:'猫猫有点离谱'},
- {id:'rabbit',name:'复活兔兔',tag:'缝缝补补又活了'},
- {id:'fish',name:'蹦跶鱼骨',tag:'只剩骨头也要跳'},
- {id:'dino',name:'发芽恐龙',tag:'化石醒来长草了'}
+ {id:'poop',name:'翡翠游侠',tag:'强力炮弹伤害翻倍 · 跳跃变小'},
+ {id:'pig',name:'赤焰医师',tag:'小大便恢复 2 血 · 获得 2 秒保护'},
+ {id:'cat',name:'暗夜刺客',tag:'疾跑与蹲行加速'},
+ {id:'rabbit',name:'银翼剑客',tag:'三段跳 · 跳得更高'},
+ {id:'fish',name:'苍蓝枪手',tag:'速射炮弹 · 适合连续攻击'},
+ {id:'dino',name:'黄金骑士',tag:'护甲挡一次攻击 · 受伤保护更久'}
 ];
 const petRoster=[{id:'slime',name:'芽芽团'},{id:'fish',name:'小鱼骨'},{id:'chick',name:'云朵鸡'},{id:'none',name:'暂不带宠物'}];
-// Every costume uses the same collision body; these drawings never affect difficulty.
+// Human avatars share the established movement and collision body.
 function paintCharacter(g,id,{time=0,gait=0,facing=1,player=1}={}){
- const oval=(x,y,rx,ry,color)=>{g.fillStyle=color;g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill();};
+ const styles={
+  poop:{coat:'#257c62',trim:'#b8f7c1',hair:'#21382c',skin:'#efc4a1'},
+  pig:{coat:'#a33d4f',trim:'#ffd697',hair:'#563c34',skin:'#e9b494'},
+  cat:{coat:'#34354f',trim:'#c4b0ff',hair:'#202331',skin:'#d9b397'},
+  rabbit:{coat:'#c1cbd9',trim:'#ffffff',hair:'#e9e8ee',skin:'#f3ccb4'},
+  fish:{coat:'#285c9c',trim:'#a1eaff',hair:'#213047',skin:'#dca887'},
+  dino:{coat:'#a17b35',trim:'#ffe5a1',hair:'#47352d',skin:'#b98465'}
+ };
+ const c=styles[id]||styles.poop;
  const box=(x,y,w,h,r,color)=>{g.fillStyle=color;g.beginPath();g.roundRect(x,y,w,h,r);g.fill();};
- const line=(points,color,width=2)=>{g.strokeStyle=color;g.lineWidth=width;g.lineCap='round';g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();};
- const tri=(points,color)=>{g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill();};
- const eye=(x,y)=>{oval(x,y,4.4,5.3,'#fffdec');oval(x+facing*.9,y+.5,1.8,2.6,'#293a44');};
- const feet=()=>{box(-15,15+Math.sin(gait)*2,10,4,2,'#f5a7cb');box(5,15-Math.sin(gait)*2,10,4,2,'#9feae5');};
- const sprout=(x,y)=>{line([[x,y+6],[x,y-5]],'#70b877');oval(x-4,y-6,5,2.5,'#b8f77e');oval(x+4,y-9,5,2.5,'#79d67c');};
- g.save();
- if(id==='pig'){
-  tri([[-16,-8],[-18,-22],[-4,-14]],'#ed8faa');tri([[16,-8],[18,-22],[4,-14]],'#ed8faa');tri([[-14,-12],[-15,-18],[-8,-14]],'#ffc5d2');tri([[14,-12],[15,-18],[8,-14]],'#ffc5d2');
-  oval(0,1,17,18,'#f6afbc');oval(-6,9,8,7,'#ffcbd3');eye(-7,-4);eye(6,-4);oval(0,5,9,6,'#e77c9d');oval(-4,5,1.5,2,'#995069');oval(4,5,1.5,2,'#995069');
-  g.strokeStyle='#f6afbc';g.lineWidth=3;g.beginPath();g.arc(-19,7,4,0,Math.PI*1.7);g.stroke();feet();
- }else if(id==='cat'){
-  tri([[-16,-5],[-17,-26],[-3,-15]],'#f4c076');tri([[16,-5],[17,-26],[3,-15]],'#f4c076');tri([[-13,-12],[-14,-21],[-7,-15]],'#f2a0ac');tri([[13,-12],[14,-21],[7,-15]],'#f2a0ac');
-  g.strokeStyle='#e5a252';g.lineWidth=6;g.beginPath();g.moveTo(-12,12);g.quadraticCurveTo(-28,13,-22,-3);g.stroke();oval(0,2,16,17,'#f4c076');oval(0,9,10,9,'#fff0ce');eye(-6,-4);eye(6,-4);tri([[-3,3],[3,3],[0,6]],'#a75e76');line([[0,6],[3,9],[7,6]],'#654c51',1.5);
-  for(const side of [-1,1]){line([[side*10,2],[side*21,0]],'#e4d6c0',1);line([[side*11,5],[side*22,7]],'#e4d6c0',1);}line([[-2,-14],[0,-9],[3,-14]],'#ce8b43');feet();
- }else if(id==='rabbit'){
-  oval(-8,-22,5,13,'#9fcab5');oval(9,-20,5,11,'#c4b6e4');oval(-8,-23,2,8,'#df9eaa');oval(9,-21,2,6,'#e5c8ec');oval(0,2,16,17,'#b6d3bf');box(1,-10,12,13,3,'#d2c0e6');eye(-6,-3);line([[4,-6],[10,0]],'#68566f');line([[10,-6],[4,0]],'#68566f');
-  line([[-8,8],[8,8]],'#617967',1.4);for(let x=-5;x<=7;x+=4)line([[x,5],[x,11]],'#617967',1);box(-2,8,4,6,1,'#fff6df');sprout(-3,-17);feet();
- }else if(id==='fish'){
-  tri([[-10,0],[-26,-12],[-23,13]],'#e9ddc2');line([[-22,0],[7,0]],'#fff1cf',4);
-  for(let x=-12;x<=0;x+=6){line([[x,-1],[x-3,-10]],'#e9ddc2',3);line([[x,1],[x-3,10]],'#e9ddc2',3);}oval(11,-2,10,13,'#fff0d6');oval(12,-4,4,5,'#3e5360');oval(14,-5,1.5,2,'#97ecd1');tri([[20,1],[14,5],[22,6]],'#385360');box(4,14,10,4,2,'#f3aac9');box(-12,14+Math.sin(gait)*3,10,4,2,'#9feae5');sprout(9,-14);
- }else if(id==='dino'){
-  g.strokeStyle='#c8bda6';g.lineWidth=7;g.beginPath();g.moveTo(-8,9);g.quadraticCurveTo(-23,12,-24,-1);g.stroke();oval(0,5,12,13,'#bcbaa9');box(-1,-15,23,20,6,'#ddd5be');oval(7,-7,4,4.5,'#526c66');oval(8,-8,1.6,1.7,'#b5f497');oval(18,-5,1.4,1.4,'#6d786a');line([[5,1],[20,1]],'#787d6c');for(let x=7;x<20;x+=5)box(x,1,2,4,0,'#fff4dc');for(let y=3;y<14;y+=4)line([[-7,y],[4,y]],'#ece7d2',2);sprout(5,-17);tri([[-10,-4],[-16,-8],[-13,2]],'#8bb796');feet();
- }else{
-  const skin=g.createLinearGradient(-15,-16,14,19);skin.addColorStop(0,'#e4ad68');skin.addColorStop(.5,'#a96536');skin.addColorStop(1,'#704023');
-  oval(0,10,17,8,skin);oval(-1,0,13,8,skin);oval(1,-9,9,7,skin);g.fillStyle=skin;g.beginPath();g.moveTo(-5,-10);g.bezierCurveTo(-8,-20,8,-16,4,-24);g.bezierCurveTo(16,-17,10,-8,3,-5);g.fill();eye(-6,-2);eye(5,-4);box(-4,5,10,6,3,'#4a2a29');box(0,8,5,5,2,'#f594a7');feet();
- }
- // Player colors remain recognizable even when both choose the same creature.
- const cap=player===2?'#438bdd':'#3bb768',brim=player===2?'#235b9c':'#187d44';
- if(id==='poop'){g.save();g.translate(1,-17);g.rotate(-.16+Math.sin(time*3)*.06);box(-11,-9,23,12,8,cap);box(-14,0,31,4,2,brim);line([[0,-9],[0,-15]],'#a7ee8c');g.save();g.translate(0,-15);g.scale(Math.cos(time*15),1);oval(-6,0,7,2.6,'#bbf37e');oval(6,0,7,2.6,'#bbf37e');g.restore();g.restore();}
- else{box(-11,10,22,4,2,cap);tri([[-9,12],[-15,19],[-6,17]],brim);}
+ const polygon=(points,color)=>{g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill();};
+ const stride=Math.sin(gait)*3;
+ g.save();g.scale(facing,1);
+ // Tailored coats, high boots and flowing scarves distinguish the six adventurers.
+ polygon([[-8,-2],[-15,15],[-22,10+Math.sin(time*6)*3],[-15,-4]],c.coat);
+ box(-8,8,7,13+stride,2,'#263044');box(2,8,7,13-stride,2,'#263044');
+ box(-9,17+stride,9,5,2,'#151e2e');box(2,17-stride,10,5,2,'#151e2e');
+ box(-10,-5,20,18,4,c.coat);box(-2,-4,4,13,1,c.trim);
+ box(-14,-3,5,14,2,c.coat);box(9,-3,5,14,2,c.coat);
+ box(-14,8,5,4,2,c.skin);box(9,8,5,4,2,c.skin);
+ box(-10,8,20,3,1,'#263044');box(-2,8,4,3,1,c.trim);
+ box(-3,-10,6,6,2,c.skin);box(-9,-25,18,19,6,c.skin);
+ polygon([[-10,-16],[-11,-26],[-5,-31],[5,-30],[12,-24],[9,-15],[5,-23],[-2,-19],[-3,-25]],c.hair);
+ g.strokeStyle='#3b2e35';g.lineWidth=1.4;g.beginPath();g.moveTo(1,-17);g.lineTo(7,-18);g.stroke();
+ box(3,-16,3,2,1,'#243447');box(2,-11,4,1,1,'#a56b60');
+ box(-10,-7,19,4,2,c.trim);
+ if(id==='poop'){box(-11,-29,22,6,3,c.coat);box(0,-25,15,3,1,c.trim);}
+ if(id==='pig'){box(-13,-3,8,7,2,c.trim);box(-10,-2,2,5,0,'#fff');box(-12,0,6,2,0,'#fff');}
+ if(id==='cat')polygon([[-10,-7],[-23,-12+Math.sin(time*8)*3],[-20,-5],[-8,-3]],c.trim);
+ if(id==='rabbit'){g.strokeStyle=c.trim;g.lineWidth=2;g.beginPath();g.moveTo(-12,15);g.lineTo(-18,-13);g.stroke();}
+ if(id==='fish'){box(8,4,12,5,2,'#334b68');box(17,3,7,3,1,c.trim);}
+ if(id==='dino'){box(-15,-6,11,8,3,c.trim);box(5,-6,11,8,3,c.trim);box(-17,2,8,13,3,c.coat);}
+ box(-9,3,3,3,1,player===2?'#81c4ff':'#a6ffb0');
  g.restore();
 }
 function paintPet(g,id,time=0){

@@ -1,5 +1,5 @@
 const {setup}=require('./expedition.test.cjs'),assert=require('node:assert/strict');const run=setup(null,true);
-const fresh=()=>run('load(26,true);for(let i=0;i<40;i++)update(1/120)');
+const fresh=()=>run('load(26,true);monster.hp=0;for(let i=0;i<40;i++)update(1/120)');
 fresh();run('fail();var downX=p.x;keys2.right=true;var otherX=p2.x;for(let i=0;i<60;i++)update(1/120)');assert.equal(run('state'),'playing');assert.equal(run('p.life'),'down');assert(run('p2.x>otherX+40'));assert.equal(run('p.x'),run('downX'));assert.equal(run("$('overlay').hidden"),true);run('var downV=p.vy;jump()');assert.equal(run('p.vy'),run('downV'));
 fresh();run('p.x=100;p2.x=140;fail();p2.x=p.x+34;for(let i=0;i<130;i++)update(1/120)');assert.equal(run('p.life'),'down','rescue needs sustained proximity');run('for(let i=0;i<20;i++)update(1/120)');assert.equal(run('p.life'),'active');assert(run('p.invulnerable>0'));run('fail("spike")');assert.equal(run('p.life'),'active','revive protection');
 fresh();run('withSecond(()=>fail());p.x=p2.x-30;for(let i=0;i<150;i++)update(1/120)');assert.equal(run('p2.life'),'active','P1 rescues P2');
@@ -7,6 +7,6 @@ fresh();run('fail();p2.x=150;for(let i=0;i<120;i++)update(1/120);pause();var fro
 fresh();run('var safe=p.lastSafe.slice();p.y=600;update(1/120)');assert.equal(run('p.life'),'down');assert.equal(run('p.y+p.h'),run('safe[1]'));assert.equal(run('p.x'),run('safe[0]'));
 fresh();run('saveCheckpoint(410,440);stars[0].got=true;doorCursor=1;fail();withSecond(()=>fail());updateRescue(0);respawn()');assert(run('stars[0].got&&doorCursor===1'));assert.equal(run('state'),'playing');
 run('load(59,true);fail();p2.x=levels[index].bossX-140;p2.y=405;boss.clock=bossInterval();update(1/120)');assert(run('boss.shots.length>0'),'Boss keeps moving when P1 is down');
-fresh();run('doorCursor=doors.length-1;stars.forEach(s=>s.got=true);p2.life="out";p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;updateDoors();updateCamera(0,true);draw(0)');assert.equal(run('state'),'playing','cannot win with an eliminated teammate');assert(run('(p.x-camera.x)*camera.zoom>=0'));
+fresh();run('doorCursor=doors.length-1;monster.hp=0;stars.forEach(s=>s.got=true);p2.life="out";p.x=levels[index].goal[0]-14;p.y=levels[index].goal[1]-35;updateDoors();updateCamera(0,true);draw(0)');assert.equal(run('state'),'playing','cannot win with an eliminated teammate');assert(run('(p.x-camera.x)*camera.zoom>=0'));
 fresh();run('fail();p2.x=150;t=p.downUntil-.005;p.rescueProgress=1.199;p2.x=p.x+30;update(.01)');assert.equal(run('p.life'),'out','deadline wins over a late rescue');
 console.log('PASS: either player continues, both rescue directions, 1.2s progress, 20s deadline, pause, elimination, safe rescue marker, invulnerability, team revival, persistence, Boss and exit.');

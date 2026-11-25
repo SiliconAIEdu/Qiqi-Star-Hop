@@ -66,7 +66,7 @@ for(let n=0;n<100;n++){
  let L,gate;
  if(n<30){L=structuredClone(originals[n]);gate=L.goal.slice();}
  else{const r=recipes[n-30];L={name:r[0],sub:themes[r[2]][0]+' · '+themes[r[3]][0],color:originals[(n-30)%30].color,platforms:[],stars:[],spikes:[],hammers:[],beams:[],hint:'观察落点，连续跳跃。更远的路段藏着编号门。',route:'',checkpoint:[45,profiles[r[1]][0]]};}
- L.hammers??=[];L.beams??=[];L.checkpoints=[L.checkpoint];L.doors=[];L.crumbleDelay=n<30?.6:.5;
+ L.hammers??=[];L.beams??=[];L.checkpoints=[L.checkpoint];L.doors=[];L.crumbleDelay=1.1-n*.006;
  if(n>=30){const r=recipes[n-30];gate=section(L,0,profiles[r[1]][0],r[1],r[2],n,true);if(n%4===0){L.key=[gate[0]-40,gate[1]-32];}}
  // Preserve the original opening and make all later sections traversable both ways.
  L.doors.push({x:gate[0],y:gate[1],real:n%2===0,hidden:false,clue:'沿着第一段路线向前探索。'});
@@ -83,6 +83,33 @@ for(let n=0;n<100;n++){
   if(hidden){L.platforms.push([gate[0]-50,gate[1]-100,100]);doorY-=100;}
   L.doors.push({x:doorX,y:doorY,real:s===0?n%2!==0:n%3===0,hidden,clue:hidden?'休息台上方也许有微光，跳上小平台找找。':'沿'+themes[kind][0]+'前进。'});
  }
+ // Extend the final approach before the exit or Boss arena.
+ const [approachX,approachY]=gate;
+ const rise=30+(n%4)*10;
+ L.platforms.push([approachX+155,approachY-rise,105],
+  [approachX+315,approachY-rise+20,110],[approachX+450,approachY,180]);
+ L.stars.push([approachX+205,approachY-rise-30],[approachX+370,approachY-rise-10]);
+ // Each approach mixes a timed obstacle with a safe resting ledge.
+ const trap=n%3;
+ if(trap===0){
+  L.spikes.push([approachX+207,approachY-rise]);
+  L.hammers.push([approachX+370,approachY-rise-125,130,.85+(n%5)*.08]);
+ }else if(trap===1){
+  L.beams.push([approachX+185,approachY-rise-120,45,96]);
+  L.platforms.push([approachX+315,approachY-rise+20,110,'crumble']);
+  // Replace the solid ledge so that the disappearing floor has real consequences.
+  L.platforms=L.platforms.filter(q=>!(q[0]===approachX+315&&!q[3]));
+ }else{
+  const ledge=L.platforms.find(q=>q[0]===approachX+315);
+  ledge.push('phase',n%3,3.8);
+  L.spikes.push([approachX+520,approachY]);
+ }
+ // A visible warning precedes the concealed spikes in every course.
+ L.hiddenSpikes=[{x:approachX+198+(n%5)*4,y:approachY-rise,delay:.85-n*.0045}];
+ const crumble=L.platforms.find(q=>q[0]===approachX+315);
+ if(crumble){crumble.length=3;crumble.push('crumble');}
+ gate=[approachX+540,approachY];
+ L.doors.push({x:gate[0],y:gate[1],real:true,hidden:false,clue:'跳过最后一段云桥，前方有新的休息点。'});
  if(n===29||n===59||n===99){
   L.boss=true;L.bossHP=n===99?12:n===59?8:5;const arena=gate[0]+180;
   L.platforms.push([gate[0]+22,gate[1],100],[arena-20,Math.min(440,gate[1]+60),135],[arena+110,440,900],[arena+250,350,110],[arena+445,290,100],[arena+650,325,110]);

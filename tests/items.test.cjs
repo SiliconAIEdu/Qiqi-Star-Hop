@@ -1,11 +1,40 @@
-const {setup}=require('./expedition.test.cjs'),assert=require('node:assert/strict');const run=setup(null,true);
-for(let i=0;i<100;i++){run(`load(${i},true)`);assert(run('itemBoxes.length>=3&&itemBoxes.length<=5'));assert(run('itemBoxes.every(b=>levels[index].platforms.some(([x,y,w,k])=>!k&&b.x>=x+24&&b.x<=x+w-24&&b.y===y-22))'),'boxes rest on permanent platforms');assert(run('itemBoxes.every(b=>!levels[index].spikes.some(([x,y])=>Math.abs(y-b.y-22)<55&&Math.abs(x+14-b.x)<65))'));}
-run('load(0,true);var b=itemBoxes[0];p.x=b.x-14;p.y=b.y-p.h/2;var before=starCount();updateItems(0)');assert.equal(run('p.power.shield'),12);assert.equal(run('starCount()'),run('before'));assert.equal(run('p2.power.shield'),0);assert(run('itemBoxes[0].taken[0]&&!itemBoxes[0].taken[1]'));run('p.power.shield=3;updateItems(0)');assert.equal(run('p.power.shield'),3,'same player cannot farm one box');run('p2.x=p.x;p2.y=p.y;withSecond(()=>updateItems(0))');assert.equal(run('p2.power.shield'),12,'both can claim');
-run('var safe=p.lastSafe.slice();var deathsBefore=deaths;fail("spike")');assert.equal(run('p.life'),'active');assert.equal(run('p.power.shield'),0);assert.equal(run('deaths'),run('deathsBefore'));assert.equal(run('p.x'),run('safe[0]'));assert(run('p.invulnerable>0'));run('p.invulnerable=0;fail("hammer")');assert.equal(run('p.life'),'down');
-run('load(0,true);p.power.shield=12;fail("fall")');assert.equal(run('p.life'),'down','shield cannot prevent falls');assert.equal(run('p.power.shield'),0);
-run('load(26,true);for(let i=0;i<40;i++)update(1/120);itemBoxes=[];p.power.magnet=10;stars=[{x:p.x+105,y:p.y+15,got:false},{x:p.x+200,y:p.y+15,got:false}];update(.01)');assert.equal(run('stars[0].got'),true);assert.equal(run('stars[1].got'),false);assert.equal(run('doorCursor'),0);
-run('load(26,true);for(let i=0;i<40;i++)update(1/120);itemBoxes=[];keys.right=true;update(.01);var normalSpeed=p.vx;p.power.speed=8;update(.01)');assert(run('p.vx>normalSpeed'));assert.equal(run('p2.power.speed'),0);run('p.power.speed=.005;update(.01)');assert.equal(run('p.vx'),run('normalSpeed'));
-run('p.power.magnet=10;pause();var remaining=p.power.magnet;update(1)');assert.equal(run('p.power.magnet'),run('remaining'));run('state="playing";fail();update(.01)');assert.equal(run('p.power.magnet'),0);
-run('load(0,true);saveCheckpoint(410,420);itemBoxes[0].taken[0]=true;p.power.speed=8;respawn()');assert.equal(run('p.power.speed'),0);assert.equal(run('itemBoxes[0].taken[0]'),true);run('load(0,true)');assert.equal(run('itemBoxes[0].taken[0]'),false);
-run('fail();p.x=itemBoxes[0].x-14;p.y=itemBoxes[0].y-9;updateItems(0)');assert.equal(run('itemBoxes[0].taken[0]'),false,'ghosts cannot open boxes');run('draw(0);respawn();p.power={shield:3,magnet:5,speed:7};draw(0);hud()');assert(run("$('item-status').textContent.includes('泡泡护盾 3s')"));
-console.log('PASS: safe boxes across all 100 levels, independent claims, shield hit/fall rules, magnet range, speed expiry, pause, death/checkpoint reset, ghost restrictions and power visuals.');
+const {setup}=require('./expedition.test.cjs');
+const assert=require('node:assert/strict');
+const run=setup(null,true);
+
+for(let i=0;i<100;i++){
+ run(`load(${i},true);update(1/120)`);
+ assert(run('p.armed && p2.armed'), 'both players can pick up the starting wand');
+ assert(run('monster.hp===2 && monster.x>levels[index].worldWidth*.2 && !monster.chasing'),'a living monster waits in the middle of every level');
+ assert.doesNotThrow(()=>run('draw(0)'));
+}
+assert(run("$('item-status').textContent.includes('1P 已装备 · 2P 已装备')"));
+run('draw(0)');
+run('load(0,true);doorCursor=doors.length-1;stars.forEach(s=>s.got=true);p.x=monster.x-14;p.y=monster.y-16;attackMonster()');
+assert.equal(run('monster.hp'),2,'unarmed players cannot attack');
+assert.equal(run('canExit()'),false,'a living monster blocks the exit');
+run('t=.25;p2.armed=true;p2.x=p.x;p2.y=p.y;withSecond(attackMonster);withSecond(attackMonster);updateShots(0)');
+assert.equal(run('monster.hp'),1,'second player can attack but cannot bypass the cooldown');
+run('saveCheckpoint(p.x,p.y+p.h);respawn()');
+assert(run('p2.armed && monster.hp===1'),'checkpoint preserves weapon and combat progress');
+run('t+=.36;p2.x=monster.x-14;p2.y=monster.y-17;withSecond(attackMonster);updateShots(0)');
+assert.equal(run('monster.hp'),0);
+assert.equal(run('canExit()'),true);
+run('p.x=levels[0].goal[0]-14;p.y=levels[0].goal[1]-35;p2.x=p.x;p2.y=p.y;update(1/120)');
+assert.equal(run('state'),'won','both players can finish after defeating the monster');
+
+run('chooseMode(false);weaponPickups=[];p.x=monster.x+90;p.y=monster.y-17;var before=monster.x;t=.7;updateMonster(.1)');
+assert(run('monster.chasing && monster.x>before'),'living monster pursues a player');
+run('p.x=monster.x+300;before=monster.x;updateMonster(.1)');
+assert(run('monster.x>before'),'an alerted monster continues chasing past its initial detection range');
+run('p.x=monster.x-14;p.y=monster.y-17;t=monster.attackAt;monsterContact()');
+assert.equal(run('p.hp'),2,'monster contact removes one heart');
+assert.equal(run('state'),'playing');
+run('monsterContact()');
+assert.equal(run('p.hp'),2,'invulnerability prevents repeated contact damage');
+run('p.invulnerable=0;t+=1.3;monsterContact()');
+assert.equal(run('p.hp'),1);
+run('p.invulnerable=0;t+=1.3;monsterContact()');
+assert.equal(run('state'),'dead','zero hearts causes death');
+run('state="playing";monster.hp=0;before=monster.x;updateMonster(.1);monsterContact()');
+assert(run('monster.x===before && state==="playing"'),'defeated monsters stop chasing and attacking');
